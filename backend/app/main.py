@@ -1,85 +1,59 @@
-import os, secrets, time
-from pathlib import Path
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI
+from app.database import engine, SessionLocal
+from app import models
+from app.api import routes
+from app.core.config import settings
+from app.core.security import hash_password
+from datetime import datetime, timedelta, timezone
+import secrets
 
-ENV_PATH = Path(__file__).resolve().parents[2] / '.env'
-def ensure_env():
-    if not ENV_PATH.exists():
-        jwt = secrets.token_hex(32)
-        fernet = secrets.token_urlsafe(32)
-        admin_pass = secrets.token_urlsafe(12)
-        content = f"""DATABASE_URL=postgresql://postgres:postgres@db:5432/signal
-JWT_SECRET={jwt}
-FERNET_KEY={fernet}
-ADMIN_EMAIL=admin@signalmaster.pro
-ADMIN_PASSWORD={admin_pass}
-VITE_WS_URL=
-"""
-        ENV_PATH.write_text(content)
-        print("[SignalMasterPro] .env criado automaticamente em", ENV_PATH)
-        print("[SignalMasterPro] Admin criado: admin@signalmaster.pro")
-        print("[SignalMasterPro] Senha gerada (ver logs):", admin_pass)
-ensure_env()
+models.Base.metadata.create_all(bind=engine)
+app = FastAPI(title='SignalMaster PRO')
+app.include_router(routes.router, prefix='/api')
+from app.ws import routes as ws_routes
+app.include_router(ws_routes.router)
 
-app = FastAPI(title="SignalMasterPro", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-templates_dir = Path(__file__).resolve().parents[1] / 'templates'
-static_dir = templates_dir / 'static'
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
-WS_CLIENTS = {}
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, client_id: str = None):
-    if not client_id:
-        await websocket.close(code=4001)
-        return
-    await websocket.accept()
-    WS_CLIENTS[client_id] = websocket
+# First-run admin+license creation
+def create_first_admin_and_license():
+    db = SessionLocal()
     try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        WS_CLIENTS.pop(client_id, None)
+        admin = db.query(models.User).filter_by(is_admin=True).first()
+        if admin:
+            print('👤 Admin already exists')
+            return
+        email = settings.ADMIN_EMAIL
+        pw = settings.ADMIN_PASSWORD
+        if not email or not pw:
+            print('⚠️ ADMIN_EMAIL or ADMIN_PASSWORD not set; skipping auto-admin')
+            return
+        u = models.User(email=email, password_hash=hash_password(pw), is_admin=True)
+        db.add(u); db.commit(); db.refresh(u)
+        print(f'✅ First admin created: {email}')
+        # create license for admin
+        key = 'AUTO-' + secrets.token_hex(8).upper()
+        days = settings.LICENSE_DEFAULT_DAYS
+        expires = None
+        if days and int(days) > 0:
+            expires = datetime.now(timezone.utc) + timedelta(days=int(days))
+        lic = models.License(license_key=key, license_type='pro', expires_at=expires, is_active=True)
+        db.add(lic); db.commit(); db.refresh(lic)
+        # assign license to user
+        u.license_id = lic.id
+        db.add(u); db.commit()
+        print(f'✅ License created and assigned to admin: {key} (expires: {expires})')
+    finally:
+        db.close()
 
-def broadcast_signal(payload: dict):
+create_first_admin_and_license()
+
+@app.on_event('startup')
+async def startup_event():
+    # start background signal engine
     import asyncio
-    async def _send_all():
-        dead = []
-        for cid, ws in list(WS_CLIENTS.items()):
-            try:
-                await ws.send_json({"type":"signal","data":payload})
-            except Exception:
-                dead.append(cid)
-        for d in dead:
-            WS_CLIENTS.pop(d, None)
-    asyncio.ensure_future(_send_all())
+    from app.signal_engine import run_signal_engine
+    loop = asyncio.get_event_loop()
+    loop.create_task(run_signal_engine())
 
-@app.get("/", response_class=HTMLResponse)
-async def index():
-    html_path = Path(__file__).resolve().parents[2] / 'templates' / 'index.html'
-    if html_path.exists():
-        return HTMLResponse(content=html_path.read_text(), status_code=200)
-    return HTMLResponse("<h1>SignalMasterPro</h1>", status_code=200)
-
-@app.get("/api/v1/health")
-def health():
-    return {"ok": True, "service": "SignalMasterPro"}
-
-import random
-@app.get("/api/v1/signal/{pair}")
-def get_signal(pair: str):
-    pair = pair.strip().upper()
-    if not pair:
-        raise HTTPException(status_code=400, detail="Par inválido")
-    action = random.choice(["CALL", "PUT"])
-    confidence = round(random.uniform(0.65, 0.99), 2)
-    ts = int(time.time())
-    payload = {"pair": pair, "action": action, "confidence": confidence, "generated_at": ts}
-    broadcast_signal(payload)
-    return {"ok": True, "signal": payload}
+@app.get('/')
+def index():
+    return {'ok': True}

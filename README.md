@@ -1,16 +1,16 @@
-SignalMasterPro - Quickstart (PT-BR)
+SignalMaster PRO - Final (License Auto)
 
-1) Teste local:
-   cp backend/.env.example backend/.env
-   ./deploy.sh
-   Abra: http://localhost:8000/api/v1/health
-   Gerar sinal: http://localhost:8000/api/v1/signal/EURUSD
+This scaffold creates automatically on first run:
+- .env (if missing)
+- first admin account (ADMIN_EMAIL / ADMIN_PASSWORD from .env or auto-generated)
+- an active license tied to that admin (30 days by default)
 
-2) Deploy no Railway:
-   - Crie repositório no GitHub e faça push do conteúdo desta pasta.
-   - No Railway: New Project -> Deploy from GitHub -> selecione o repo.
-   - Adicione Railway Postgres (irá fornecer DATABASE_URL).
-   - Em Settings -> Variables adicione: JWT_SECRET, FERNET_KEY, VITE_WS_URL (wss://<teu-projeto>.up.railway.app/ws)
-   - Deploy. No primeiro arranque o .env será gerado automaticamente e a senha do admin aparecerá nos logs.
+No demo signals are created. The project is signals-only (no auto-trading).
 
-Admin padrão: admin@signalmaster.pro (senha aleatória exibida nos logs do 1º run).
+Quick start (local):
+1. cd backend
+2. python -m venv .venv && source .venv/bin/activate
+3. pip install -r requirements.txt
+4. python -m app.main    # this will create .env (if needed), admin and license
+
+Or use docker-compose included for dev.
