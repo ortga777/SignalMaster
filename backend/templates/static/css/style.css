@@ -1,0 +1,9 @@
+body{font-family:Inter,Arial; background:#0f1724;color:#e6eef8;margin:0;padding:0}
+.top{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:#061233}
+h1{margin:0;font-size:18px}
+.status.on{color:#39d353;font-weight:600}
+main{padding:20px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 10px;text-align:left}
+thead th{background:#061233;color:#9fb7d8}
+tr{border-bottom:1px solid rgba(255,255,255,0.03)}
