@@ -1,35 +1,29 @@
-from pydantic_settings import BaseSettings
-from pydantic import validator
-from typing import List, Optional
 import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.api import auth_router, signals_router, admin_router, broker_router, ml_router
 
-class Settings(BaseSettings):
-    APP_NAME: str = "SignalMaster"
-    DEBUG: bool = True
-    
-    # Database
-    DATABASE_URL: str = "postgresql://user:pass@localhost/signalmaster"
-    
-    # JWT
-    SECRET_KEY: str = "your-secret-key-here"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    # CORS
-    ALLOWED_HOSTS: List[str] = ["*"]
-    
-    # API Keys (Brokers, etc)
-    BROKER_API_KEY: Optional[str] = None
-    BROKER_SECRET_KEY: Optional[str] = None
-    
-    @validator("DATABASE_URL")
-    def validate_database_url(cls, v):
-        if not v:
-            raise ValueError("DATABASE_URL must be set")
-        return v
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+app = FastAPI(title=settings.APP_NAME)
 
-settings = Settings()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(signals_router, prefix="/api/signals", tags=["signals"])
+app.include_router(broker_router, prefix="/api/brokers", tags=["brokers"])
+app.include_router(ml_router, prefix="/api/ml", tags=["ml"])
+app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
+
+@app.get("/")
+async def root():
+    return {"app": settings.APP_NAME, "node": "demo" if settings.DEBUG else "prod"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "debug": settings.DEBUG}
