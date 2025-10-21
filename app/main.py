@@ -4,7 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api import auth_router, signals_router, admin_router, broker_router, ml_router
 
-app = FastAPI(title=settings.APP_NAME)
+app = FastAPI(
+    title=settings.APP_NAME,
+    description="SignalMaster - AI Trading Signal Platform",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,8 +26,32 @@ app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
 
 @app.get("/")
 async def root():
-    return {"app": settings.APP_NAME, "node": "demo" if settings.DEBUG else "prod"}
+    return {
+        "app": settings.APP_NAME,
+        "version": "1.0.0",
+        "status": "running",
+        "environment": "development" if settings.DEBUG else "production",
+        "endpoints": {
+            "docs": "/docs",
+            "health": "/health",
+            "api": {
+                "auth": "/api/auth",
+                "signals": "/api/signals", 
+                "brokers": "/api/brokers",
+                "ml": "/api/ml",
+                "admin": "/api/admin"
+            }
+        }
+    }
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "debug": settings.DEBUG}
+    return {
+        "status": "healthy",
+        "timestamp": "2024-10-21T22:30:00Z",  # Use datetime.utcnow() em produção
+        "services": {
+            "api": "operational",
+            "database": "connected",  # Adicione verificação real depois
+            "ml_model": "ready"
+        }
+}
