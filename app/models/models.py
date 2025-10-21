@@ -2,45 +2,21 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from datetime import datetime
-import enum
 
 Base = declarative_base()
 
-class UserRole(str, enum.Enum):
-    USER = "user"
-    ADMIN = "admin"
-    SUPER_ADMIN = "super_admin"
-
-class SignalType(str, enum.Enum):
-    BUY = "buy"
-    SELL = "sell"
-    HOLD = "hold"
-
-class BrokerType(str, enum.Enum):
-    ALPACA = "alpaca"
-    IBKR = "ibkr"
-    METATRADER = "metatrader"
-    CUSTOM = "custom"
-
 class User(Base):
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     username = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(String(50), default=UserRole.USER, nullable=False)
+    role = Column(String(50), default="user", nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    signals = relationship("Signal", back_populates="user")
-    brokers = relationship("UserBroker", back_populates="user")
 
 class Signal(Base):
     __tablename__ = "signals"
-
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String(50), nullable=False, index=True)
     signal_type = Column(String(20), nullable=False)
@@ -50,14 +26,11 @@ class Signal(Base):
     time_frame = Column(String(20), default="1h")
     is_active = Column(Boolean, default=True)
     signal_data = Column(Text)
-
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    user = relationship("User", back_populates="signals")
+    user = relationship("User")
 
 class Broker(Base):
     __tablename__ = "brokers"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     broker_type = Column(String(50), nullable=False)
@@ -65,42 +38,34 @@ class Broker(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user_brokers = relationship("UserBroker", back_populates="broker")
-
 class UserBroker(Base):
     __tablename__ = "user_brokers"
-
     id = Column(Integer, primary_key=True, index=True)
     api_key = Column(String(255))
     api_secret = Column(String(255))
     is_active = Column(Boolean, default=True)
     broker_settings = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     broker_id = Column(Integer, ForeignKey("brokers.id"), nullable=False)
-
-    user = relationship("User", back_populates="brokers")
-    broker = relationship("Broker", back_populates="user_brokers")
-
-class MLModel(Base):
-    __tablename__ = "ml_models"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    version = Column(String(50), nullable=False)
-    model_path = Column(String(255), nullable=False)
-    accuracy = Column(Float)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    model_parameters = Column(Text)
+    user = relationship("User")
+    broker = relationship("Broker")
 
 class Trade(Base):
     __tablename__ = "trades"
-
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String(50), nullable=False)
+    trade_type = Column(String(20), nullable=False)
+    quantity = Column(Float, nullable=False)
+    price = Column(Float, nullable=False)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String(20), default="executed")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    signal_id = Column(Integer, ForeignKey("signals.id"))
+    broker_id = Column(Integer, ForeignKey("user_brokers.id"))
+    user = relationship("User")
+    signal = relationship("Signal")
+    broker = relationship("UserBroker")    symbol = Column(String(50), nullable=False)
     trade_type = Column(String(20), nullable=False)
     quantity = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
