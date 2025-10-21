@@ -1,95 +1,3 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from datetime import datetime
-import enum
-
-Base = declarative_base()
-
-class UserRole(str, enum.Enum):
-    USER = "user"
-    ADMIN = "admin"
-    SUPER_ADMIN = "super_admin"
-
-class SignalType(str, enum.Enum):
-    BUY = "buy"
-    SELL = "sell"
-    HOLD = "hold"
-
-class BrokerType(str, enum.Enum):
-    ALPACA = "alpaca"
-    IBKR = "ibkr"
-    METATRADER = "metatrader"
-    CUSTOM = "custom"
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, index=True, nullable=False)
-    username = Column(String(100), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
-    role = Column(String(50), default=UserRole.USER, nullable=False)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    # Relationships
-    signals = relationship("Signal", back_populates="user")
-    brokers = relationship("UserBroker", back_populates="user")
-
-class Signal(Base):
-    __tablename__ = "signals"
-
-    id = Column(Integer, primary_key=True, index=True)
-    symbol = Column(String(50), nullable=False, index=True)
-    signal_type = Column(String(20), nullable=False)
-    confidence = Column(Float, default=0.5)
-    price = Column(Float, nullable=False)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    time_frame = Column(String(20), default="1h")
-    is_active = Column(Boolean, default=True)
-    signal_data = Column(Text)
-
-    # Foreign keys
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    # Relationships
-    user = relationship("User", back_populates="signals")
-
-class Broker(Base):
-    __tablename__ = "brokers"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    broker_type = Column(String(50), nullable=False)
-    api_endpoint = Column(String(255))
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    user_brokers = relationship("UserBroker", back_populates="broker")
-
-class UserBroker(Base):
-    __tablename__ = "user_brokers"
-
-    id = Column(Integer, primary_key=True, index=True)
-    api_key = Column(String(255))
-    api_secret = Column(String(255))
-    is_active = Column(Boolean, default=True)
-    broker_settings = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    # Foreign keys
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    broker_id = Column(Integer, ForeignKey("brokers.id"), nullable=False)
-
-    # Relationships
-    user = relationship("User", back_populates="brokers")
-    broker = relationship("Broker", back_populates="user_brokers")
-
 class MLModel(Base):
     __tablename__ = "ml_models"
 
@@ -100,7 +8,7 @@ class MLModel(Base):
     accuracy = Column(Float)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    model_parameters = Column(Text)
+    model_parameters = Column(Text)  # ← LINHA 141 CORRIGIDA    model_parameters = Column(Text)
 
 class Trade(Base):
     __tablename__ = "trades"
