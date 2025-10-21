@@ -27,7 +27,6 @@ class Signal(Base):
     is_active = Column(Boolean, default=True)
     signal_data = Column(Text)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user = relationship("User")
 
 class Broker(Base):
     __tablename__ = "brokers"
@@ -48,8 +47,6 @@ class UserBroker(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     broker_id = Column(Integer, ForeignKey("brokers.id"), nullable=False)
-    user = relationship("User")
-    broker = relationship("Broker")
 
 class Trade(Base):
     __tablename__ = "trades"
@@ -62,46 +59,7 @@ class Trade(Base):
     status = Column(String(20), default="executed")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     signal_id = Column(Integer, ForeignKey("signals.id"))
-    broker_id = Column(Integer, ForeignKey("user_brokers.id"))
-    user = relationship("User")
-    signal = relationship("Signal")
-    broker = relationship("UserBroker")    symbol = Column(String(50), nullable=False)
-    trade_type = Column(String(20), nullable=False)
-    quantity = Column(Float, nullable=False)
-    price = Column(Float, nullable=False)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    status = Column(String(20), default="executed")
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    signal_id = Column(Integer, ForeignKey("signals.id"))
-    broker_id = Column(Integer, ForeignKey("user_brokers.id"))
-
-    user = relationship("User")
-    signal = relationship("Signal")
-    broker = relationship("UserBroker")
-
-class AuditLog(Base):
-    __tablename__ = "audit_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    action = Column(String(100), nullable=False)
-    resource = Column(String(100), nullable=False)
-    resource_id = Column(Integer)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    old_values = Column(Text)
-    new_values = Column(Text)
-    ip_address = Column(String(45))
-    user_agent = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    user = relationship("User")    symbol = Column(String(50), nullable=False)
-    trade_type = Column(String(20), nullable=False)  # buy, sell
-    quantity = Column(Float, nullable=False)
-    price = Column(Float, nullable=False)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    status = Column(String(20), default="executed")  # pending, executed, cancelled, failed
-
-    # Foreign keys
+    broker_id = Column(Integer, ForeignKey("user_brokers.id"))    # Foreign keys
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     signal_id = Column(Integer, ForeignKey("signals.id"))
     broker_id = Column(Integer, ForeignKey("user_brokers.id"))
