@@ -1,8 +1,33 @@
-here# No SignalBase, mude:
-class SignalBase(BaseModel):
+# app/schemas.py (OPCIONAL)
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+class UserCreate(BaseModel):
+    email: str
+    username: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    username: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class SignalCreate(BaseModel):
     symbol: str
-    signal_type: SignalType
-    confidence: float = 0.5
+    signal_type: str
     price: float
-    time_frame: str = "1h"
-    signal_data: Optional[dict] = None  # Mude de 'metadata' para 'signal_data'
+
+class SignalResponse(BaseModel):
+    id: int
+    symbol: str
+    signal_type: str
+    price: float
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
