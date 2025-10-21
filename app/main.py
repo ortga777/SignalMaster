@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api import auth_router, signals_router, admin_router, broker_router, ml_router
-
 app = FastAPI(
     title=settings.APP_NAME,
     description="SignalMaster - AI Trading Signal Platform",
