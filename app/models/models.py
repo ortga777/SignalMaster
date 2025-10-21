@@ -50,7 +50,7 @@ class Signal(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     time_frame = Column(String(20), default="1h")
     is_active = Column(Boolean, default=True)
-    signal_data = Column(Text)  # Corrigido: era 'metadata'
+    signal_data = Column(Text)
 
     # Foreign keys
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -78,7 +78,7 @@ class UserBroker(Base):
     api_key = Column(String(255))
     api_secret = Column(String(255))
     is_active = Column(Boolean, default=True)
-    broker_settings = Column(Text)  # Corrigido: era 'settings'
+    broker_settings = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -100,7 +100,45 @@ class MLModel(Base):
     accuracy = Column(Float)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    model_parameters = Column(Text)  # Corrigido: era 'parameters'
+    model_parameters = Column(Text)
+
+class Trade(Base):
+    __tablename__ = "trades"
+
+    id = Column(Integer, primary_key=True, index=True)
+    symbol = Column(String(50), nullable=False)
+    trade_type = Column(String(20), nullable=False)
+    quantity = Column(Float, nullable=False)
+    price = Column(Float, nullable=False)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String(20), default="executed")
+
+    # Foreign keys
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    signal_id = Column(Integer, ForeignKey("signals.id"))
+    broker_id = Column(Integer, ForeignKey("user_brokers.id"))
+
+    # Relationships
+    user = relationship("User")
+    signal = relationship("Signal")
+    broker = relationship("UserBroker")
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    action = Column(String(100), nullable=False)
+    resource = Column(String(100), nullable=False)
+    resource_id = Column(Integer)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    old_values = Column(Text)
+    new_values = Column(Text)
+    ip_address = Column(String(45))
+    user_agent = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User")    model_parameters = Column(Text)  # Corrigido: era 'parameters'
 
 class Trade(Base):
     __tablename__ = "trades"
