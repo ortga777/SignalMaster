@@ -2,7 +2,6 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from app.ml.lstm_model import predict_from_candles, initialize_model_if_needed
 
-# ← ESTA LINHA ESTÁ FALTANDO!
 router = APIRouter()
 
 # Inicializa o modelo
