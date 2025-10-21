@@ -44,13 +44,13 @@ class Signal(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String(50), nullable=False, index=True)
-    signal_type = Column(String(20), nullable=False)  # buy, sell, hold
-    confidence = Column(Float, default=0.5)  # 0.0 to 1.0
+    signal_type = Column(String(20), nullable=False)
+    confidence = Column(Float, default=0.5)
     price = Column(Float, nullable=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
-    time_frame = Column(String(20), default="1h")  # 1m, 5m, 1h, 4h, 1d
+    time_frame = Column(String(20), default="1h")
     is_active = Column(Boolean, default=True)
-    signal_data = Column(Text)  # Mudei de 'metadata' para 'signal_data'
+    signal_data = Column(Text)  # Corrigido: era 'metadata'
 
     # Foreign keys
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -63,7 +63,7 @@ class Broker(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    broker_type = Column(String(50), nullable=False)  # alpaca, ibkr, etc
+    broker_type = Column(String(50), nullable=False)
     api_endpoint = Column(String(255))
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -78,7 +78,7 @@ class UserBroker(Base):
     api_key = Column(String(255))
     api_secret = Column(String(255))
     is_active = Column(Boolean, default=True)
-    broker_settings = Column(Text)  # Mudei de 'settings' para 'broker_settings'
+    broker_settings = Column(Text)  # Corrigido: era 'settings'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -100,7 +100,17 @@ class MLModel(Base):
     accuracy = Column(Float)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    model_parameters = Column(Text)  # Mudei de 'parameters' para 'model_parameters'
+    model_parameters = Column(Text)  # Corrigido: era 'parameters'
+
+class Trade(Base):
+    __tablename__ = "trades"
+
+    id = Column(Integer, primary_key=True, index=True)
+    symbol = Column(String(50), nullable=False)
+    trade_type = Column(String(20), nullable=False)
+    quantity = Column(Float, nullable=False)
+    price = Column(Float, nullable=False)
+    timestamp = Column(DateTime(time    model_parameters = Column(Text)  # Mudei de 'parameters' para 'model_parameters'
 
 class Trade(Base):
     __tablename__ = "trades"
