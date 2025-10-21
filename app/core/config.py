@@ -1,19 +1,35 @@
-from pydantic_settings import BaseSettings, PostgresDsn
-from pathlib import Path
+from pydantic_settings import BaseSettings
+from pydantic import validator
+from typing import List, Optional
+import os
 
 class Settings(BaseSettings):
-    APP_NAME: str = "SignalMaster PRO FastAPI"
-    SECRET_KEY: str
-    DEBUG: bool = False
-    DATABASE_URL: str
-    ADMIN_EMAIL: str = "admin@signalmaster.pro"
-    ADMIN_PASSWORD: str = "Admin123"
-    MODEL_PATH: str = "/data/model/lstm_model.h5"
-    DEMO_SIGNALS_LIMIT: int = 5
-    LICENSE_DURATION_DAYS: int = 30
-
+    APP_NAME: str = "SignalMaster"
+    DEBUG: bool = True
+    
+    # Database
+    DATABASE_URL: str = "postgresql://user:pass@localhost/signalmaster"
+    
+    # JWT
+    SECRET_KEY: str = "your-secret-key-here"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # CORS
+    ALLOWED_HOSTS: List[str] = ["*"]
+    
+    # API Keys (Brokers, etc)
+    BROKER_API_KEY: Optional[str] = None
+    BROKER_SECRET_KEY: Optional[str] = None
+    
+    @validator("DATABASE_URL")
+    def validate_database_url(cls, v):
+        if not v:
+            raise ValueError("DATABASE_URL must be set")
+        return v
+    
     class Config:
         env_file = ".env"
-        env_file_encoding = "utf-8"
+        case_sensitive = True
 
 settings = Settings()
