@@ -1,0 +1,39 @@
+# render.yaml
+
+services:
+  - type: web
+    name: signalmaster-api
+    env: python
+    plan: free
+    branch: main
+    
+    # Build configuration
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install pydantic-settings
+    
+    # Start command
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
+    
+    # Environment variables
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: signalmaster-db
+          property: connectionString
+    
+    # Health check path
+    healthCheckPath: /health
+
+databases:
+  - name: signalmaster-db
+    plan: free
+    databaseName: signalmaster
+    user: signalmaster_user
