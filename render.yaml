@@ -1,39 +1,33 @@
-# render.yaml
-
 services:
   - type: web
-    name: signalmaster-api
+    name: signalmaster-pro-api
     env: python
     plan: free
-    branch: main
-    
-    # Build configuration
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-      pip install pydantic-settings
-    
-    # Start command
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 10000
-    
-    # Environment variables
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: DEBUG
-        value: false
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///./signalmaster.db
       - key: SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: signalmaster-db
-          property: connectionString
-    
-    # Health check path
-    healthCheckPath: /health
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+
+  # Database (se usar PostgreSQL)
+  - type: postgres
+    name: signalmaster-db
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+    databaseName: signalmaster
+    user: signalmaster_user
 
 databases:
   - name: signalmaster-db
     plan: free
+    region: frankfurt
     databaseName: signalmaster
     user: signalmaster_user

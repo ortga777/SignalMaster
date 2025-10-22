@@ -1,48 +1,37 @@
 from pydantic_settings import BaseSettings
-from typing import List, Optional
+from typing import List
 import os
 
 class Settings(BaseSettings):
-    # App
-    APP_NAME: str = "SignalMasterPRO"
-    DEBUG: bool = True
-    ENVIRONMENT: str = "development"
-
-    # Database
-    DATABASE_URL: str = "postgresql://signalmaster_user:password@localhost/signalmaster_db"
-
-    # JWT
-    SECRET_KEY: str = "your-secret-key-change-in-production-make-it-very-long-and-secure"
+    # Application
+    PROJECT_NAME: str = "Signal Master Pro"
+    VERSION: str = "1.0.0"
+    API_V1_STR: str = "/api/v1"
+    SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 2880  # 2 dias
-
-    # Admin User (ADICIONEI ESTES)
-    ADMIN_EMAIL: str = "admin@signalmaster.com"
-    ADMIN_PASSWORD: str = "Admin123!"
-
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # Database
+    DATABASE_URL: str = "sqlite+aiosqlite:///./signalmaster.db"
+    TEST_DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
+    
     # CORS
     ALLOWED_HOSTS: List[str] = ["*"]
-
-    # Brokers
-    BROKER_API_KEY: Optional[str] = None
-    BROKER_SECRET_KEY: Optional[str] = None
-    BROKER_DEFAULT: str = "alpaca"
-
-    # ML
-    MODEL_PATH: str = "./data/models/lstm_model.h5"
-    ML_ENABLED: bool = True
-
-    # Trading
-    DEFAULT_TIMEFRAME: str = "1h"
-    MAX_SIGNALS_PER_USER: int = 100
-
-    # Render/Production
-    RENDER: bool = False
-    PORT: int = 8000
-
+    
+    # Brokers API
+    OLYMPTRADE_API_KEY: str = ""
+    POCKETOPTION_API_KEY: str = "" 
+    QUOTEX_API_KEY: str = ""
+    
+    # ML Model
+    MODEL_PATH: str = "app/ml/models/signal_predictor.h5"
+    
+    # Deployment
+    ENVIRONMENT: str = "development"
+    LOG_LEVEL: str = "INFO"
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
 
-# Instância global das configurações
 settings = Settings()
