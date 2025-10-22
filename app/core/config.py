@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     
     class Config:
         extra = "ignore"  # Ignora variáveis extras
+        extra = "ignore"  # Ignora variáveis extras
         env_file = ".env"
         case_sensitive = True
         extra = "ignore"  # ⬅️ ESTA LINHA RESOLVE O ERRO!
