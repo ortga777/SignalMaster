@@ -31,7 +31,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     
     class Config:
+        extra = "ignore"  # Ignora variáveis extras
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # ⬅️ ESTA LINHA RESOLVE O ERRO!
 
 settings = Settings()

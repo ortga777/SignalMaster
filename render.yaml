@@ -4,8 +4,10 @@ services:
     env: python
     plan: free
     region: frankfurt
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: |
+      uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         value: sqlite+aiosqlite:///./signalmaster.db
@@ -15,15 +17,8 @@ services:
         value: production
       - key: LOG_LEVEL
         value: INFO
-
-  # Database (se usar PostgreSQL)
-  - type: postgres
-    name: signalmaster-db
-    plan: free
-    region: frankfurt
-    ipAllowList: []
-    databaseName: signalmaster
-    user: signalmaster_user
+      - key: PORT
+        value: 8000
 
 databases:
   - name: signalmaster-db
