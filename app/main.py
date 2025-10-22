@@ -1,26 +1,16 @@
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.security import HTTPBearer
-from contextlib import asynccontextmanager
-import uvicorn
+from fastapi import FastAPI
+from datetime import datetime
 
-from auth import router as auth_router
-from signals import router as signals_router
-from brokers import router as brokers_router
-from ml import router as ml_router
-from admin import router as admin_router
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    print("🚀 SignalMasterPRO iniciando...")
-    yield
-    # Shutdown
-    print("🔴 SignalMasterPRO encerrando...")
+# Importar dos módulos corretos
+from app.auth import router as auth_router
+from app.signals import router as signals_router
+from app.admin import router as admin_router
+from brokers.connections import router as brokers_router
+from ml.models import router as ml_router
 
 app = FastAPI(
     title="SignalMasterPRO",
     version="1.0.0",
-    lifespan=lifespan,
     docs_url="/docs",
     redoc_url=None
 )
@@ -35,16 +25,13 @@ app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
 @app.get("/health")
 async def health_check():
     return {
+        "app": "SignalMasterPRO",
+        "version": "1.0.0",
         "status": "running",
         "environment": "development",
-        "timestamp": datetime.now()
+        "timestamp": datetime.now().isoformat()
     }
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
