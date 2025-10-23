@@ -2,10 +2,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
+# SEMPRE usar SQLite
+DATABASE_URL = "sqlite+aiosqlite:///./signalmaster.db"
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=True if settings.ENVIRONMENT == "development" else False,
-    future=True,
+    DATABASE_URL,
+    echo=True,
     connect_args={"check_same_thread": False}
 )
 
