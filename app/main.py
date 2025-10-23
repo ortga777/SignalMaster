@@ -1,40 +1,18 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api.routes import signals, auth, brokers, admin
-import logging
+from app.api.routes import router
+from app.services.signal_service import signal_generator
+import asyncio
+import os
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    logger.info("Starting Signal Master Pro API")
-    try:
-        # Criar tabelas
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables created successfully")
-    except Exception as e:
-        logger.error(f"Database error: {e}")
-    yield
-    # Shutdown
-    logger.info("Shutting down Signal Master Pro API")
-    await engine.dispose()
-
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    description="Professional Trading Signals Management System",
-    lifespan=lifespan
-)
-
-# CORS
+# Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_HOSTS,
@@ -43,29 +21,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rotas
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
-app.include_router(signals.router, prefix="/api/v1/signals", tags=["signals"])
-app.include_router(brokers.router, prefix="/api/v1/brokers", tags=["brokers"])
-app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
+# Static files and templates
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
 
-@app.get("/")
-async def root():
-    return {
-        "message": "Signal Master Pro API",
-        "version": settings.VERSION,
-        "docs": "/docs",
-        "health": "/health"
-    }
+# Include routes
+app.include_router(router)
+
+@app.on_event("startup")
+async def startup():
+    # Create tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    
+    # Start signal generation in background
+    asyncio.create_task(signal_generator.start_generation())
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 @app.get("/health")
-async def health_check():
+async def health():
     return {
-        "status": "healthy",
-        "database": "connected",
-        "timestamp": "2024-01-01T00:00:00Z"
+        "status": "healthy", 
+        "service": "SignalMasterPro",
+        "signals_running": signal_generator.is_running
     }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

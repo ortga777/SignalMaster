@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalMasterPro - Real-Time Trading Signals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .signal-call { background: linear-gradient(135deg, #10B981, #059669); }
+        .signal-put { background: linear-gradient(135deg, #EF4444, #DC2626); }
+        .connected { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+        .disconnected { background: linear-gradient(135deg, #6B7280, #4B5563); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                SignalMasterPro
+            </h1>
+            <p class="text-gray-400">REAL-TIME SIGNALS BOT FOR BINARY OPTIONS</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Sidebar -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <h2 class="text-lg font-semibold mb-4">Dashboard</h2>
+                    <div class="space-y-2">
+                        <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-gray-600 transition" onclick="loadDashboard()">
+                            📊 Dashboard
+                        </button>
+                        <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-gray-600 transition" onclick="loadLiveSignals()">
+                            📈 Live Signals
+                        </button>
+                        <button class="w-full text-left p-2 rounded bg-gray-700 hover:bg-gray-600 transition">
+            ⚙️ Settings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Connection Status -->
+                <div id="connection-status" class="connected rounded-lg p-4 text-center">
+                    <div class="text-2xl">🔌</div>
+                    <div class="font-semibold">Connected</div>
+                    <div class="text-sm opacity-90" id="broker-status">Checking...</div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="lg:col-span-3">
+                <!-- Live Signals Table -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Live Signals</h2>
+                        <div class="space-x-2">
+                            <button onclick="startSignals()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded transition">
+                                Start Signals
+                            </button>
+                            <button onclick="stopSignals()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition">
+                                Stop Signals
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="text-left p-3">Pair</th>
+                                    <th class="text-left p-3">Action</th>
+                                    <th class="text-left p-3">Confidence</th>
+                                    <th class="text-left p-3">Price</th>
+                                    <th class="text-left p-3">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="signals-table">
+                                <!-- Sinais serão carregados via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        
+        // Conectar WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/signals`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onmessage = function(event) {
+                const signal = JSON.parse(event.data);
+                addSignalToTable(signal);
+            };
+            
+            ws.onclose = function() {
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+        
+        // Adicionar sinal à tabela
+        function addSignalToTable(signal) {
+            const table = document.getElementById('signals-table');
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-700';
+            
+            const confidenceColor = signal.confidence > 0.8 ? 'text-green-400' : 
+                                  signal.confidence > 0.7 ? 'text-yellow-400' : 'text-red-400';
+            
+            row.innerHTML = `
+                <td class="p-3 font-mono">${signal.pair}</td>
+                <td class="p-3">
+                    <span class="px-2 py-1 rounded ${
+                        signal.action === 'CALL' ? 'bg-green-600' : 'bg-red-600'
+                    }">${signal.action}</span>
+                </td>
+                <td class="p-3 ${confidenceColor} font-semibold">
+                    ${(signal.confidence * 100).toFixed(0)}%
+                </td>
+                <td class="p-3 font-mono">${signal.price}</td>
+                <td class="p-3 text-gray-400">${new Date().toLocaleTimeString()}</td>
+            `;
+            
+            table.insertBefore(row, table.firstChild);
+            if (table.children.length > 10) {
+                table.removeChild(table.lastChild);
+            }
+        }
+        
+        // Carregar sinais existentes
+        async function loadSignals() {
+            try {
+                const response = await fetch('/api/signals');
+                const data = await response.json();
+                
+                const table = document.getElementById('signals-table');
+                table.innerHTML = '';
+                
+                data.signals.forEach(signal => {
+                    addSignalToTable(signal);
+                });
+            } catch (error) {
+                console.error('Error loading signals:', error);
+            }
+        }
+        
+        // Carregar status
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                const statusElement = document.getElementById('connection-status');
+                const brokerElement = document.getElementById('broker-status');
+                
+                if (data.brokers_connected) {
+                    statusElement.className = 'connected rounded-lg p-4 text-center';
+                    brokerElement.textContent = `${data.total_signals} signals active`;
+                } else {
+                    statusElement.className = 'disconnected rounded-lg p-4 text-center';
+                    brokerElement.textContent = 'Disconnected';
+                }
+            } catch (error) {
+                console.error('Error loading status:', error);
+            }
+        }
+        
+        // Controlar geração de sinais
+        async function startSignals() {
+            await fetch('/api/start-signals', { method: 'POST' });
+            alert('Signal generation started!');
+        }
+        
+        async function stopSignals() {
+            await fetch('/api/stop-signals', { method: 'POST' });
+            alert('Signal generation stopped!');
+        }
+        
+        // Inicializar
+        connectWebSocket();
+        loadSignals();
+        loadStatus();
+        setInterval(loadStatus, 10000); // Atualizar status a cada 10 segundos
+    </script>
+</body>
+</html>
