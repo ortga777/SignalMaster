@@ -11,9 +11,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Database
+    # Database - FORÇAR SQLite
     DATABASE_URL: str = "sqlite+aiosqlite:///./signalmaster.db"
-    TEST_DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
     
     # CORS
     ALLOWED_HOSTS: List[str] = ["*"]
@@ -27,14 +26,12 @@ class Settings(BaseSettings):
     MODEL_PATH: str = "app/ml/models/signal_predictor.h5"
     
     # Deployment
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = "production"
     LOG_LEVEL: str = "INFO"
     
     class Config:
-        extra = "ignore"  # Ignora variáveis extras
-        extra = "ignore"  # Ignora variáveis extras
         env_file = ".env"
         case_sensitive = True
-        extra = "ignore"  # ⬅️ ESTA LINHA RESOLVE O ERRO!
+        extra = "ignore"
 
 settings = Settings()
