@@ -4,17 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port \$PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: signalmaster-db
-          property: connectionString
-      - key: SECRET_KEY
-        generateValue: true
-
-databases:
-  - name: signalmaster-db
-    plan: free
-    databaseName: signalmaster
-    user: signalmaster_user
+      - key: PYTHON_VERSION
+        value: 3.11.0
